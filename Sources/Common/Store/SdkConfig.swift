@@ -19,15 +19,12 @@ public struct SdkConfig {
     public enum Factory {
         public static func create() -> SdkConfig { // TODO: remove this function and put default values in the struct itself
             SdkConfig(
-                siteId: nil,
-                apiKey: nil,
-                region: nil,
                 trackingApiUrl: nil,
                 autoTrackPushEvents: true,
                 backgroundQueueMinNumberOfTasks: 10,
                 backgroundQueueSecondsDelay: 30,
                 backgroundQueueExpiredSeconds: Seconds.secondsFromDays(3),
-                logLevel: CioLogLevel.error,
+                logLevel: CioLogLevel.debug,
                 autoTrackScreenViews: false,
                 autoTrackDeviceAttributes: true
             )
@@ -170,6 +167,12 @@ public struct SdkConfig {
      as a wrapper/bridge such as with ReactNative.
      */
     public var _sdkWrapperConfig: SdkWrapperConfig? // swiftlint:disable:this identifier_name
+}
+
+public extension SdkConfig {
+    var isSdkInitialized: Bool {
+        siteId != nil && apiKey != nil && region != nil
+    }
 }
 
 /**

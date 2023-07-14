@@ -182,6 +182,12 @@ public class CioQueue: Queue {
         logger.debug("processing queue status \(status).")
         let isManyTasksInQueue = status.numTasksInQueue >= sdkConfig.backgroundQueueMinNumberOfTasks
 
+        // We should not run the queue if the SDK is not initialized because running the queue depends on queue runner hooks to be established. Those get set when the SDK is initialized.
+        guard sdkConfig.isSdkInitialized else {
+            logger.debug("sdk not initialized yet, not running queue")
+            return
+        }
+
         if isManyTasksInQueue {
             logger.info("queue met criteria to run automatically")
 

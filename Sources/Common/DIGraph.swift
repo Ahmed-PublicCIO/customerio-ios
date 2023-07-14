@@ -1,7 +1,7 @@
 import Foundation
 
 public class DIGraph {
-    public let sdkConfig: SdkConfig
+    public var sdkConfig: SdkConfig
 
     public init(sdkConfig: SdkConfig) {
         self.sdkConfig = sdkConfig

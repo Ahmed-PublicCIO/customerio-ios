@@ -24,7 +24,7 @@ open class ModuleTopLevelObject<ImplementationClass> {
     public init() {}
 
     private func createAndSetImplementationInstance() -> ImplementationClass {
-        let newInstance = getImplementationInstance(diGraph: CustomerIO.shared.diGraph!) // TODO: don't do this
+        let newInstance = getImplementationInstance(diGraph: CustomerIO.shared.diGraph) // TODO: don't do this
         alreadyCreatedImplementation = newInstance
         return newInstance
     }
@@ -32,7 +32,7 @@ open class ModuleTopLevelObject<ImplementationClass> {
     // We want each top level module to have an initialize function so that features like hooks get setup as soon as the
     // SDK is initialized.
     public func initializeModuleIfSdkInitialized() {
-        inititlizeModule(diGraph: CustomerIO.shared.diGraph!) // TODO: don't do this
+        inititlizeModule(diGraph: CustomerIO.shared.diGraph) // TODO: don't do this
     }
 
     open func inititlizeModule(diGraph: DIGraph) {

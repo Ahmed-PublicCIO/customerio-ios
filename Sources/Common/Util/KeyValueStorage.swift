@@ -22,7 +22,7 @@ public protocol KeyValueStorage {
  */
 // sourcery: InjectRegister = "KeyValueStorage"
 public class UserDefaultsKeyValueStorage: KeyValueStorage {
-    private var siteId: String?
+//    private var siteId: String?
     private let deviceMetricsGrabber: DeviceMetricsGrabber
 
     private var userDefaults: UserDefaults? {
@@ -30,7 +30,7 @@ public class UserDefaultsKeyValueStorage: KeyValueStorage {
     }
 
     init(sdkConfig: SdkConfig, deviceMetricsGrabber: DeviceMetricsGrabber) {
-        self.siteId = sdkConfig.siteId
+//        self.siteId = sdkConfig.siteId
         self.deviceMetricsGrabber = deviceMetricsGrabber
     }
 
@@ -38,7 +38,7 @@ public class UserDefaultsKeyValueStorage: KeyValueStorage {
     // Instead of the more common way the SDK stores data by sandboxing all of that data by site-id.
     // See `GlobalDataStore` for data that is relevant for *all* site-ids in the SDK.
     public func switchToGlobalDataStore() {
-        siteId = nil
+//        siteId = nil
     }
 
     /**
@@ -55,9 +55,9 @@ public class UserDefaultsKeyValueStorage: KeyValueStorage {
         }
 
         var siteIdPart = ".shared" // used for storing global data used for all site-ids.
-        if let siteId = siteId { // if a siteid is given to this instance, we dont store global data with this instance.
-            siteIdPart = ".\(siteId)"
-        }
+//        if let siteId = siteId { // if a siteid is given to this instance, we dont store global data with this instance.
+//            siteIdPart = ".\(siteId)"
+//        }
 
         return "io.customer.sdk\(appUniqueIdentifier)\(siteIdPart)"
     }

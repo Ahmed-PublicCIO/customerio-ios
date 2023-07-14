@@ -45,7 +45,7 @@ internal class CustomerIOImplementation: CustomerIOInstance {
         self.deviceInfo = diGraph.deviceInfo
     }
 
-    public var config: SdkConfig? {
+    public var config: SdkConfig {
         sdkConfig
     }
 

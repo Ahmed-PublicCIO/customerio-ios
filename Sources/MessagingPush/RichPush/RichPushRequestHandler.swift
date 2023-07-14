@@ -21,7 +21,7 @@ internal class RichPushRequestHandler {
         let existingRequest = requests[requestId]
         if existingRequest != nil { return }
 
-        let diGraph = CustomerIO.shared.diGraph!
+        let diGraph = CustomerIO.shared.diGraph
         let httpClient = diGraph.httpClient
 
         let newRequest = RichPushRequest(

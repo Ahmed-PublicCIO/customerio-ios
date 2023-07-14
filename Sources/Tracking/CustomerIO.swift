@@ -5,7 +5,7 @@ public protocol CustomerIOInstance: AutoMockable {
     var siteId: String? { get }
 
     /// Get the current configuration options set for the SDK.
-    var config: SdkConfig? { get }
+    var config: SdkConfig { get }
 
     func identify(
         identifier: String,
@@ -112,13 +112,15 @@ public class CustomerIO: CustomerIOInstance {
 
     // The 1 place that DiGraph is strongly stored in memory for the SDK.
     // Exposed for `SdkInitializedUtil`. Not recommended to use this property directly.
-    public var diGraph: DIGraph! // TODO: better place to store the digraph?
+    public var diGraph: DIGraph = .init(sdkConfig: SdkConfig.Factory.create()) // TODO: better place to store the digraph?
 
     // strong reference to repository to prevent garbage collection as it runs tasks in async.
     private var cleanupRepository: CleanupRepository?
 
     // private constructor to force use of singleton API
-    private init() {}
+    private init() {
+        self.implementation = CustomerIOImplementation(diGraph: diGraph)
+    }
 
     // Constructor for unit testing. Just for overriding dependencies and not running logic.
     // See CustomerIO.shared.initializeIntegrationTests for integration testing
@@ -142,7 +144,7 @@ public class CustomerIO: CustomerIOInstance {
     ) {
         let implementation = CustomerIOImplementation(diGraph: diGraph)
         Self.shared = CustomerIO(implementation: implementation, diGraph: diGraph)
-        Self.shared.postInitialize(diGraph: diGraph)
+        Self.shared.postInitialize()
     }
 
     /**
@@ -208,11 +210,11 @@ public class CustomerIO: CustomerIOInstance {
         Self.shared.diGraph = newDiGraph
         Self.shared.implementation = CustomerIOImplementation(diGraph: newDiGraph)
 
-        Self.shared.postInitialize(diGraph: newDiGraph)
+        Self.shared.postInitialize()
     }
 
     // Contains all logic shared between all of the initialize() functions.
-    internal func postInitialize(diGraph: DIGraph) {
+    internal func postInitialize() {
         let hooks = diGraph.hooksManager
         let threadUtil = diGraph.threadUtil
         let logger = diGraph.logger
@@ -234,7 +236,7 @@ public class CustomerIO: CustomerIOInstance {
             )
     }
 
-    public var config: SdkConfig? {
+    public var config: SdkConfig {
         implementation.config
     }
 

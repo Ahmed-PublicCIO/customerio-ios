@@ -178,7 +178,7 @@ public class CustomerIOInstanceMock: CustomerIOInstance, Mock {
      When setter of the property called, the value given to setter is set here.
      When the getter of the property called, the value set here will be returned. Your chance to mock the property.
      */
-    public var underlyingConfig: SdkConfig? = nil
+    public var underlyingConfig: SdkConfig!
     /// `true` if the getter or setter of property is called at least once.
     public var configCalled: Bool {
         configGetCalled || configSetCalled
@@ -197,7 +197,7 @@ public class CustomerIOInstanceMock: CustomerIOInstance, Mock {
 
     public var configSetCallsCount = 0
     /// The mocked property with a getter and setter.
-    public var config: SdkConfig? {
+    public var config: SdkConfig {
         get {
             mockCalled = true
             configGetCallsCount += 1
@@ -286,7 +286,6 @@ public class CustomerIOInstanceMock: CustomerIOInstance, Mock {
         siteId = nil
         siteIdGetCallsCount = 0
         siteIdSetCallsCount = 0
-        config = nil
         configGetCallsCount = 0
         configSetCallsCount = 0
         profileAttributesGetCallsCount = 0

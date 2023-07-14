@@ -1,10 +1,9 @@
 import CioInternalCommon
 import CioTracking
 import Foundation
-import Gist
 
 internal class MessagingInAppImplementation: MessagingInAppInstance {
-    private let logger: Logger
+    private let logger: CioInternalCommon.Logger
     private var queue: Queue
     private var jsonAdapter: JsonAdapter
     private var inAppProvider: InAppProvider
@@ -12,6 +11,7 @@ internal class MessagingInAppImplementation: MessagingInAppInstance {
     private let sdkConfig: SdkConfig
 
     private var eventListener: InAppEventListener?
+    private let threadUtil: ThreadUtil
 
     init(diGraph: DIGraph) {
         self.sdkConfig = diGraph.sdkConfig
@@ -20,9 +20,12 @@ internal class MessagingInAppImplementation: MessagingInAppInstance {
         self.jsonAdapter = diGraph.jsonAdapter
         self.inAppProvider = diGraph.inAppProvider
         self.profileStore = diGraph.profileStore
+        self.threadUtil = diGraph.threadUtil
     }
 
     func initialize() {
+        let sdkConfig = CustomerIO.shared.diGraph.sdkConfig // hack to get the newest sdkconfig object, not the only provided in constructor because it might be out-of-date
+
         guard let siteId = sdkConfig.siteId, let region = sdkConfig.region else {
             // TODO: provide a safer way to init in-app that's part of the constructor?
             fatalError("SDK must be initialized before trying to initialize the in-app feature")
@@ -72,7 +75,10 @@ extension MessagingInAppImplementation: ScreenTrackingHook {
     public func screenViewed(name: String) {
         logger.debug("setting route for in-app to \(name)")
 
-        inAppProvider.setRoute(name)
+        // Gist expects webview to be launched in main thread and changing route will trigger locally stored in-app messages for that route.
+        threadUtil.runMain {
+            self.inAppProvider.setRoute(name)
+        }
     }
 }
 
