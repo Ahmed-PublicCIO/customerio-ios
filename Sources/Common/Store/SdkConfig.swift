@@ -17,12 +17,12 @@ public struct SdkConfig {
     // Used to create new instance of SdkConfig when the SDK is initialized.
     // Then, each property of the SdkConfig object can be modified by the user.
     public enum Factory {
-        public static func create(siteId: String, apiKey: String, region: Region) -> SdkConfig {
+        public static func create() -> SdkConfig { // TODO: remove this function and put default values in the struct itself
             SdkConfig(
-                siteId: siteId,
-                apiKey: apiKey,
-                region: region,
-                trackingApiUrl: region.productionTrackingUrl,
+                siteId: nil,
+                apiKey: nil,
+                region: nil,
+                trackingApiUrl: nil,
                 autoTrackPushEvents: true,
                 backgroundQueueMinNumberOfTasks: 10,
                 backgroundQueueSecondsDelay: 30,
@@ -97,20 +97,20 @@ public struct SdkConfig {
     }
 
     /// Immutable property to store the workspace site id set during SDK initialization.
-    public let siteId: String
+    public var siteId: String?
 
     /// Immutable property to store the workspace api key set during SDK initialization.
-    public let apiKey: String
+    public var apiKey: String?
 
     /// Immutable property to store the workspace Region set during SDK initialization.
-    public let region: Region
+    public var region: Region?
 
     /**
      Base URL to use for the Customer.io track API. You will more then likely not modify this value.
 
      If you override this value, `Region` set when initializing the SDK will be ignored.
      */
-    public var trackingApiUrl: String
+    public var trackingApiUrl: String?
 
     /**
      Automatic tracking of push events will automatically generate `opened` and `delivered` metrics
@@ -156,8 +156,12 @@ public struct SdkConfig {
      */
     public var autoTrackDeviceAttributes: Bool
 
-    internal var httpBaseUrls: HttpBaseUrls {
-        HttpBaseUrls(trackingApi: trackingApiUrl)
+    internal var httpBaseUrls: HttpBaseUrls? {
+        guard let trackingApiUrl = trackingApiUrl else {
+            return nil
+        }
+
+        return HttpBaseUrls(trackingApi: trackingApiUrl)
     }
 
     // property is used internally so disable swiftlint rule
@@ -184,13 +188,13 @@ public struct SdkConfig {
  */
 public struct NotificationServiceExtensionSdkConfig {
     /// Keep reference to region as it's needed for `toSdkConfig()`
-    private var siteId: String
+    var siteId: String
     /// Keep reference to region as it's needed for `toSdkConfig()`
-    private var apiKey: String
+    var apiKey: String
     /// Keep reference to region as it's needed for `toSdkConfig()`
-    private var region: Region
+    var region: Region
     /// See `SdkConfig.trackingApiUrl`
-    public var trackingApiUrl: String
+    var trackingApiUrl: String
     /// See `SdkConfig.autoTrackPushEvents`
     public var autoTrackPushEvents: Bool
     /// See `SdkConfig.logLevel`
@@ -208,13 +212,13 @@ public struct NotificationServiceExtensionSdkConfig {
     // Then, each property can be modified by the user.
     public enum Factory {
         public static func create(siteId: String, apiKey: String, region: Region) -> NotificationServiceExtensionSdkConfig {
-            let defaultSdkConfig = SdkConfig.Factory.create(siteId: siteId, apiKey: apiKey, region: region)
+            let defaultSdkConfig = SdkConfig.Factory.create()
 
             return NotificationServiceExtensionSdkConfig(
                 siteId: siteId,
                 apiKey: apiKey,
                 region: region,
-                trackingApiUrl: defaultSdkConfig.trackingApiUrl,
+                trackingApiUrl: defaultSdkConfig.trackingApiUrl!, // TODO: dont force
                 autoTrackPushEvents: defaultSdkConfig.autoTrackPushEvents,
                 logLevel: defaultSdkConfig.logLevel,
                 autoTrackDeviceAttributes: defaultSdkConfig.autoTrackDeviceAttributes
@@ -227,8 +231,11 @@ public struct NotificationServiceExtensionSdkConfig {
     /// Therefore, we need to convert this object to an `SdkConfig` instance in SDK initialization so the SDK can use
     /// it.
     public func toSdkConfig() -> SdkConfig {
-        var sdkConfig = SdkConfig.Factory.create(siteId: siteId, apiKey: apiKey, region: region)
+        var sdkConfig = SdkConfig.Factory.create()
 
+        sdkConfig.siteId = siteId
+        sdkConfig.apiKey = apiKey
+        sdkConfig.region = region
         sdkConfig.autoTrackPushEvents = autoTrackPushEvents
         sdkConfig.logLevel = logLevel
         sdkConfig.autoTrackDeviceAttributes = autoTrackDeviceAttributes

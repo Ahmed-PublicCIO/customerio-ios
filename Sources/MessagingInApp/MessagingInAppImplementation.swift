@@ -4,19 +4,17 @@ import Foundation
 import Gist
 
 internal class MessagingInAppImplementation: MessagingInAppInstance {
-    private let siteId: String
-    private let region: Region
     private let logger: Logger
     private var queue: Queue
     private var jsonAdapter: JsonAdapter
     private var inAppProvider: InAppProvider
     private var profileStore: ProfileStore
+    private let sdkConfig: SdkConfig
 
     private var eventListener: InAppEventListener?
 
     init(diGraph: DIGraph) {
-        self.siteId = diGraph.sdkConfig.siteId
-        self.region = diGraph.sdkConfig.region
+        self.sdkConfig = diGraph.sdkConfig
         self.logger = diGraph.logger
         self.queue = diGraph.queue
         self.jsonAdapter = diGraph.jsonAdapter
@@ -25,6 +23,11 @@ internal class MessagingInAppImplementation: MessagingInAppInstance {
     }
 
     func initialize() {
+        guard let siteId = sdkConfig.siteId, let region = sdkConfig.region else {
+            // TODO: provide a safer way to init in-app that's part of the constructor?
+            fatalError("SDK must be initialized before trying to initialize the in-app feature")
+        }
+
         inAppProvider.initialize(siteId: siteId, region: region, delegate: self)
 
         // if identifier is already present, set the userToken again so in case if the customer was already identified and

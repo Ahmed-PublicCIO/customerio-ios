@@ -2,10 +2,8 @@ import CioInternalCommon
 import Foundation
 
 class TrackingModuleHookProvider: ModuleHookProvider {
-    private let sdkInitializedUtil = SdkInitializedUtilImpl()
-
-    private var diGraph: DIGraph? {
-        sdkInitializedUtil.postInitializedData?.diGraph
+    private var diGraph: DIGraph {
+        CustomerIO.shared.diGraph
     }
 
     var profileIdentifyHook: ProfileIdentifyHook? {
@@ -13,7 +11,7 @@ class TrackingModuleHookProvider: ModuleHookProvider {
     }
 
     var queueRunnerHook: QueueRunnerHook? {
-        diGraph?.queueRunnerHook
+        diGraph.queueRunnerHook
     }
 
     var screenTrackingHook: ScreenTrackingHook? {

@@ -22,8 +22,8 @@ public class MessagingInApp: ModuleTopLevelObject<MessagingInAppInstance>, Messa
     // constructor that is called by test classes
     // This function's job is to populate the `shared` property with
     // overrides such as DI graph.
-    override internal init(implementation: MessagingInAppInstance?, sdkInitializedUtil: SdkInitializedUtil) {
-        super.init(implementation: implementation, sdkInitializedUtil: sdkInitializedUtil)
+    override internal init(implementation: MessagingInAppInstance?) {
+        super.init(implementation: implementation)
     }
 
     // constructor used in production with default DI graph

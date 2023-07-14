@@ -7,15 +7,13 @@ import UserNotifications
 #endif
 
 internal class MessagingPushImplementation: MessagingPushInstance {
-    let siteId: String
     let logger: Logger
     let jsonAdapter: JsonAdapter
-    let sdkConfig: SdkConfig
+    let sdkConfig: SdkConfig // TODO: we can no longer inject the SDK config into objects if we want to allow dynamic changing of the SDK config. or, we modify the SdkConfig object to dynamically pull from a store. so all propererties are computed properties.
     let backgroundQueue: Queue
-    let sdkInitializedUtil: SdkInitializedUtil
 
-    private var customerIO: CustomerIO? {
-        sdkInitializedUtil.customerio
+    private var customerIO: CustomerIO {
+        CustomerIO.shared
     }
 
     /// testing init
@@ -23,36 +21,31 @@ internal class MessagingPushImplementation: MessagingPushInstance {
         logger: Logger,
         jsonAdapter: JsonAdapter,
         sdkConfig: SdkConfig,
-        backgroundQueue: Queue,
-        sdkInitializedUtil: SdkInitializedUtil
+        backgroundQueue: Queue
     ) {
-        self.siteId = sdkConfig.siteId
+        self.sdkConfig = sdkConfig
         self.logger = logger
         self.jsonAdapter = jsonAdapter
-        self.sdkConfig = sdkConfig
         self.backgroundQueue = backgroundQueue
-        self.sdkInitializedUtil = sdkInitializedUtil
     }
 
     internal init(diGraph: DIGraph) {
-        self.siteId = diGraph.sdkConfig.siteId
+        self.sdkConfig = diGraph.sdkConfig
         self.logger = diGraph.logger
         self.jsonAdapter = diGraph.jsonAdapter
-        self.sdkConfig = diGraph.sdkConfig
         self.backgroundQueue = diGraph.queue
-        self.sdkInitializedUtil = SdkInitializedUtilImpl()
     }
 
     func deleteDeviceToken() {
-        customerIO?.deleteDeviceToken()
+        customerIO.deleteDeviceToken()
     }
 
     func registerDeviceToken(_ deviceToken: String) {
-        customerIO?.registerDeviceToken(deviceToken)
+        customerIO.registerDeviceToken(deviceToken)
     }
 
     func trackMetric(deliveryID: String, event: Metric, deviceToken: String) {
-        customerIO?.trackMetric(deliveryID: deliveryID, event: event, deviceToken: deviceToken)
+        customerIO.trackMetric(deliveryID: deliveryID, event: event, deviceToken: deviceToken)
     }
 
     #if canImport(UserNotifications)

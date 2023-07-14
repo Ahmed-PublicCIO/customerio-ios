@@ -1,4 +1,5 @@
 import CioInternalCommon
+import CioTracking
 import Foundation
 #if canImport(UserNotifications)
 import UserNotifications
@@ -66,9 +67,8 @@ extension MessagingPushImplementation {
             if let deepLinkUrl = pushContent.deepLink {
                 // A hack to get an instance of deepLinkUtil without making it a property of the MessagingPushImplementation class. deepLinkUtil is not available to app extensions but MessagingPushImplementation is.
                 // We get around this by getting a instance in this function, only.
-                if let deepLinkUtil = sdkInitializedUtil.postInitializedData?.diGraph.deepLinkUtil {
-                    deepLinkUtil.handleDeepLink(deepLinkUrl)
-                }
+                let deepLinkUtil = CustomerIO.shared.diGraph.deepLinkUtil
+                deepLinkUtil.handleDeepLink(deepLinkUrl)
             }
         default: break
         }

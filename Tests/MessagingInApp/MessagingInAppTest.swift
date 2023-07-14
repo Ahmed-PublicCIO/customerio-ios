@@ -9,22 +9,21 @@ import XCTest
 class MessagingInAppTest: UnitTest {
     private let hooksMock = HooksManagerMock()
     private let implementationMock = MessagingInAppInstanceMock()
-    private let sdkInitializedUtilMock = SdkInitializedUtilMock()
 
     override func setUp() {
         super.setUp()
 
         // This is where we inject the DI graph into our tests
-        sdkInitializedUtilMock.isInitlaized = true
-        sdkInitializedUtilMock.underlyingPostInitializedData = (siteId: testSiteId, diGraph: diGraph)
+//        sdkInitializedUtilMock.isInitlaized = true
+//        sdkInitializedUtilMock.underlyingPostInitializedData = (siteId: testSiteId, diGraph: diGraph)
 
         // This is where we inject the DI graph into our tests
-        sdkInitializedUtilMock.underlyingPostInitializedData = (siteId: testSiteId, diGraph: diGraph)
+//        sdkInitializedUtilMock.underlyingPostInitializedData = (siteId: testSiteId, diGraph: diGraph)
 
         diGraph.override(value: hooksMock, forType: HooksManager.self)
 
         // Sets default shared instance, which injects the DI graph
-        MessagingInApp.shared = MessagingInApp(implementation: implementationMock, sdkInitializedUtil: sdkInitializedUtilMock)
+        MessagingInApp.shared = MessagingInApp(implementation: implementationMock)
     }
 
     override func tearDown() {
@@ -58,7 +57,7 @@ class MessagingInAppTest: UnitTest {
     // MARK: initialize functions with SDK not initialized
 
     func test_initialize_givenSdkNotInitialized_expectModuleNotInitialized() {
-        sdkInitializedUtilMock.underlyingIsInitlaized = false
+//        sdkInitializedUtilMock.underlyingIsInitlaized = false
 
         MessagingInApp.initialize()
 
@@ -66,7 +65,7 @@ class MessagingInAppTest: UnitTest {
     }
 
     func test_initializeEventListener_givenSdkNotInitialized_expectModuleNotInitialized() {
-        sdkInitializedUtilMock.underlyingIsInitlaized = false
+//        sdkInitializedUtilMock.underlyingIsInitlaized = false
         let givenListener = InAppEventListenerMock()
 
         MessagingInApp.initialize(eventListener: givenListener)
@@ -75,7 +74,7 @@ class MessagingInAppTest: UnitTest {
     }
 
     func test_initializeOrganizationId_givenSdkNotInitialized_expectModuleNotInitialized() {
-        sdkInitializedUtilMock.underlyingIsInitlaized = false
+//        sdkInitializedUtilMock.underlyingIsInitlaized = false
 
         MessagingInApp.initialize(organizationId: .random)
 

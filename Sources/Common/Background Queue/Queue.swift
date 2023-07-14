@@ -94,7 +94,6 @@ public extension Queue {
 // sourcery: InjectRegister = "Queue"
 public class CioQueue: Queue {
     private let storage: QueueStorage
-    private let siteId: String
     private let runRequest: QueueRunRequest
     private let jsonAdapter: JsonAdapter
     private let logger: Logger
@@ -115,7 +114,6 @@ public class CioQueue: Queue {
         queueTimer: SingleScheduleTimer,
         dateUtil: DateUtil
     ) {
-        self.siteId = sdkConfig.siteId
         self.storage = storage
         self.runRequest = runRequest
         self.jsonAdapter = jsonAdapter
@@ -153,7 +151,7 @@ public class CioQueue: Queue {
 
             return (
                 success: false,
-                queueStatus: QueueStatus(queueId: siteId, numTasksInQueue: storage.getInventory().count)
+                queueStatus: QueueStatus(numTasksInQueue: storage.getInventory().count)
             )
         }
 
@@ -176,9 +174,9 @@ public class CioQueue: Queue {
         runRequest.start(onComplete: onComplete)
     }
 
-    /// We determine the queue needs to run by (1) if there are many tasks in the queue
-    /// (2) we schedule tasks to run sometime in the future.
-    /// It is by grouping more then 1 task to run at a time in the queue that will save
+    /// Determine if the queue should run or not.
+    /// There is a criteria to run the queue.
+    /// We have a criteria because by grouping more then 1 task to run at a time in the queue that will save
     /// the device battery life so we try to do that when we can.
     private func processQueueStatus(_ status: QueueStatus) {
         logger.debug("processing queue status \(status).")

@@ -141,6 +141,14 @@ public class CioQueueRunRequest: QueueRunRequest {
                         _ = self.storage.delete(storageId: nextTaskToRunInventoryItem.taskPersistedId)
 
                         updateWhileLoopLogicVariables(didTaskFail: true, taskJustExecuted: nextTaskToRunInventoryItem)
+                    } else if case .sdkNotInitialized = error {
+                        self.logger.debug("""
+                        queue task \(self.shortTaskId(nextTaskStorageId)) didn't run because the SDK is not yet initialized.
+                        """)
+
+                        self.logger.info("queue will try again after the SDK has been initialized")
+
+                        doneRunning()
                     } else {
                         let newRunResults = previousRunResults.totalRunsSet(previousRunResults.totalRuns + 1)
 

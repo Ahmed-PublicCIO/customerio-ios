@@ -61,7 +61,10 @@ public class ConsoleLogger: Logger {
     private let sdkConfig: SdkConfig
 
     private var abbreviatedSiteId: String {
-        sdkConfig.siteId.getFirstNCharacters(5)
+        if let siteId = sdkConfig.siteId {
+            return siteId.getFirstNCharacters(5)
+        }
+        return "no-siteid"
     }
 
     private var minLogLevel: CioLogLevel {

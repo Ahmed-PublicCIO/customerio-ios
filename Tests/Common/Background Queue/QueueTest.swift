@@ -23,7 +23,7 @@ class QueueTest: UnitTest {
     func test_addTask_givenFailCreateQueueTask_expectFailStatus_expectScheduleQueueToRun() {
         storageMock.createReturnValue = CreateQueueStorageTaskResult(
             success: false,
-            queueStatus: QueueStatus(queueId: testSiteId, numTasksInQueue: 0),
+            queueStatus: QueueStatus(numTasksInQueue: 0),
             createdTask: nil
         )
         storageMock.getInventoryReturnValue = []
@@ -46,7 +46,7 @@ class QueueTest: UnitTest {
         let givenCreatedTask = QueueTaskMetadata.random
         storageMock.createReturnValue = CreateQueueStorageTaskResult(
             success: true,
-            queueStatus: QueueStatus(queueId: testSiteId, numTasksInQueue: 1),
+            queueStatus: QueueStatus(numTasksInQueue: 1),
             createdTask: givenCreatedTask
         )
         storageMock.getInventoryReturnValue = [givenCreatedTask]
@@ -69,7 +69,7 @@ class QueueTest: UnitTest {
         let givenCreatedTask = QueueTaskMetadata.random
         storageMock.createReturnValue = CreateQueueStorageTaskResult(
             success: true,
-            queueStatus: QueueStatus(queueId: testSiteId, numTasksInQueue: 1),
+            queueStatus: QueueStatus(numTasksInQueue: 1),
             createdTask: givenCreatedTask
         )
         storageMock.getInventoryReturnValue = [givenCreatedTask]

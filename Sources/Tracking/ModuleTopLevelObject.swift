@@ -14,27 +14,17 @@ open class ModuleTopLevelObject<ImplementationClass> {
         alreadyCreatedImplementation ?? createAndSetImplementationInstance()
     }
 
-    private let sdkInitializedUtil: SdkInitializedUtil
-
     // for writing tests
     // provide a nil implementation if you want `sdkInitializedUtil` logic to run and real instance of implementation to run in tests
-    public init(implementation: ImplementationClass?, sdkInitializedUtil: SdkInitializedUtil) {
+    public init(implementation: ImplementationClass?) {
         self.alreadyCreatedImplementation = implementation
-        self.sdkInitializedUtil = sdkInitializedUtil
     }
 
     // singleton constructor
-    public init() {
-        self.sdkInitializedUtil = SdkInitializedUtilImpl()
-    }
+    public init() {}
 
-    private func createAndSetImplementationInstance() -> ImplementationClass? {
-        guard sdkInitializedUtil.isInitlaized, let postSdkInitializedData = sdkInitializedUtil.postInitializedData else {
-            // SDK not yet initialized. Don't run the code.
-            return nil
-        }
-
-        let newInstance = getImplementationInstance(diGraph: postSdkInitializedData.diGraph)
+    private func createAndSetImplementationInstance() -> ImplementationClass {
+        let newInstance = getImplementationInstance(diGraph: CustomerIO.shared.diGraph!) // TODO: don't do this
         alreadyCreatedImplementation = newInstance
         return newInstance
     }
@@ -42,12 +32,7 @@ open class ModuleTopLevelObject<ImplementationClass> {
     // We want each top level module to have an initialize function so that features like hooks get setup as soon as the
     // SDK is initialized.
     public func initializeModuleIfSdkInitialized() {
-        guard sdkInitializedUtil.isInitlaized, let postSdkInitializedData = sdkInitializedUtil.postInitializedData else {
-            // SDK not yet initialized. Don't run the code.
-            return
-        }
-
-        inititlizeModule(diGraph: postSdkInitializedData.diGraph)
+        inititlizeModule(diGraph: CustomerIO.shared.diGraph!) // TODO: don't do this
     }
 
     open func inititlizeModule(diGraph: DIGraph) {

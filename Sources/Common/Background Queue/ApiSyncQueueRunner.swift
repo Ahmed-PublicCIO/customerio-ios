@@ -5,7 +5,7 @@ open class ApiSyncQueueRunner {
     public let jsonAdapter: JsonAdapter
     public let logger: Logger
     private let httpClient: HttpClient
-    private let baseHttpUrls: HttpBaseUrls
+    private let sdkConfig: SdkConfig
 
     public let failureIfDontDecodeTaskData: Result<Void, HttpRequestError> = .failure(.noRequestMade(nil))
 
@@ -15,10 +15,10 @@ open class ApiSyncQueueRunner {
         httpClient: HttpClient,
         sdkConfig: SdkConfig
     ) {
+        self.sdkConfig = sdkConfig
         self.jsonAdapter = jsonAdapter
         self.logger = logger
         self.httpClient = httpClient
-        self.baseHttpUrls = sdkConfig.httpBaseUrls
     }
 
     // (1) less code for `runTask` function to decode JSON and (2) one place to do error logging if decoding wrong.
@@ -41,11 +41,11 @@ open class ApiSyncQueueRunner {
     ) {
         guard let httpParams = HttpRequestParams(
             endpoint: endpoint,
-            baseUrls: baseHttpUrls,
+            baseUrls: HttpBaseUrls.getProduction(region: .US), // TODO: why do we have RequestParams? I tihnk the http client should be only place that uses baseUrls.
             headers: nil,
             body: requestBody
         ) else {
-            logger.error("Error constructing HTTP request. Endpoint: \(endpoint), baseUrls: \(baseHttpUrls)")
+            logger.error("Error constructing HTTP request. Endpoint: \(endpoint)")
             return onComplete(.failure(.noRequestMade(nil)))
         }
 

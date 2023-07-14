@@ -11,9 +11,9 @@ public class MessagingPush: ModuleTopLevelObject<MessagingPushInstance>, Messagi
     private var globalDataStore: GlobalDataStore
 
     // testing constructor
-    internal init(implementation: MessagingPushInstance?, globalDataStore: GlobalDataStore, sdkInitializedUtil: SdkInitializedUtil) {
+    internal init(implementation: MessagingPushInstance?, globalDataStore: GlobalDataStore) {
         self.globalDataStore = globalDataStore
-        super.init(implementation: implementation, sdkInitializedUtil: sdkInitializedUtil)
+        super.init(implementation: implementation)
     }
 
     // singleton constructor

@@ -43,7 +43,7 @@ public class CioGlobalDataStore: GlobalDataStore {
     // How to get instance before DI graph is constructed
     public static func getInstance() -> GlobalDataStore {
         let newInstance = UserDefaultsKeyValueStorage(
-            sdkConfig: SdkConfig.Factory.create(siteId: "", apiKey: "", region: .US),
+            sdkConfig: SdkConfig.Factory.create(),
             deviceMetricsGrabber: DeviceMetricsGrabberImpl()
         )
         return CioGlobalDataStore(keyValueStorage: newInstance)

@@ -69,11 +69,9 @@ public enum FileType {
 // sourcery: InjectRegister = "FileStorage"
 public class FileManagerFileStorage: FileStorage {
     private let fileManager = FileManager.default
-    private let siteId: String
     private let logger: Logger
 
     init(sdkConfig: SdkConfig, logger: Logger) {
-        self.siteId = sdkConfig.siteId
         self.logger = logger
     }
 
@@ -127,8 +125,7 @@ public class FileManagerFileStorage: FileStorage {
 
         // put *all* files into our own "io.customer" directory to isolate files.
         saveLocationUrl = saveLocationUrl.appendingPathComponent("io.customer", isDirectory: true)
-        // isolate all directories by their siteId, first
-        saveLocationUrl = saveLocationUrl.appendingPathComponent(siteId, isDirectory: true)
+        // TODO: we will need to write migration code to remove the feature of files being sandboxed by siteid.
 
         // get the path and create the directories in case they are not yet made
         saveLocationUrl = type.getDirectoryPath(directoryUrl: saveLocationUrl)

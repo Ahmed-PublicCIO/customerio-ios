@@ -13,14 +13,14 @@ class KeyValueStorageTests: UnitTest {
 
     private func getSiteStorageInstance(siteId: String, deviceMetricsGrabber: DeviceMetricsGrabber? = nil) -> UserDefaultsKeyValueStorage {
         UserDefaultsKeyValueStorage(
-            sdkConfig: SdkConfig.Factory.create(siteId: siteId, apiKey: "", region: .US),
+            sdkConfig: SdkConfig.Factory.create(),
             deviceMetricsGrabber: deviceMetricsGrabber ?? diGraph.deviceMetricsGrabber
         )
     }
 
     private func getGlobalInstance(deviceMetricsGrabber: DeviceMetricsGrabber? = nil) -> UserDefaultsKeyValueStorage {
         let instance = UserDefaultsKeyValueStorage(
-            sdkConfig: SdkConfig.Factory.create(siteId: "", apiKey: "", region: .US),
+            sdkConfig: SdkConfig.Factory.create(),
             deviceMetricsGrabber: deviceMetricsGrabber ?? diGraph.deviceMetricsGrabber
         )
         instance.switchToGlobalDataStore()

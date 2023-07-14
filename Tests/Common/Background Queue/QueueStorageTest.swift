@@ -57,7 +57,6 @@ class QueueStorageTest: UnitTest {
         XCTAssertEqual(fileStorageMock.saveCallsCount, 1) // only create task call, not trying to update inventory
         XCTAssertFalse(actual.success)
         XCTAssertEqual(actual.queueStatus, QueueStatus(
-            queueId: testSiteId,
             numTasksInQueue: 0
         )) // Number of tasks should be 0 since creating a task failed.
     }
@@ -89,7 +88,6 @@ class QueueStorageTest: UnitTest {
         // `storage.create()` was ignored.
         XCTAssertFalse(actual.success)
         XCTAssertEqual(actual.queueStatus, QueueStatus(
-            queueId: testSiteId,
             numTasksInQueue: 0
         )) // Number of tasks should be 0 since creating a task failed.
     }
@@ -145,7 +143,7 @@ class QueueStorageIntegrationTest: UnitTest {
         )
 
         XCTAssertTrue(actual.success)
-        XCTAssertEqual(actual.queueStatus, QueueStatus(queueId: testSiteId, numTasksInQueue: 1))
+        XCTAssertEqual(actual.queueStatus, QueueStatus(numTasksInQueue: 1))
 
         let expectedInventory = [actual.createdTask]
         let actualInventory = storage.getInventory()

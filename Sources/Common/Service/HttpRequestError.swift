@@ -20,6 +20,8 @@ public enum HttpRequestError: Error {
     case requestsPaused
     /// Request was cancelled.
     case cancelled
+    /// HTTP request cannot be made because SDK is not yet initialized.
+    case sdkNotInitialized
 }
 
 extension HttpRequestError: CustomStringConvertible, LocalizedError {
@@ -37,6 +39,7 @@ extension HttpRequestError: CustomStringConvertible, LocalizedError {
             .localizedDescription ?? "No request was able to be made to server."
         case .requestsPaused: return "HTTP request skipped. All HTTP requests are paused for the time being."
         case .cancelled: return "Request was cancelled"
+        case .sdkNotInitialized: return "HTTP request cannot be made because SDK is not yet initialized."
         }
     }
 }

@@ -98,7 +98,7 @@ public class CustomerIO: CustomerIOInstance {
     }
 
     public var siteId: String? {
-        diGraph?.sdkConfig.siteId
+        diGraph.sdkConfig.siteId
     }
 
     /**
@@ -108,14 +108,11 @@ public class CustomerIO: CustomerIOInstance {
      */
     @Atomic public private(set) static var shared = CustomerIO()
 
-    // Only assign a value to this *when the SDK is initialzied*.
-    // It's assumed that if this instance is not-nil, the SDK has been initialized.
-    // Tip: Use `SdkInitializedUtil` in modules to see if the SDK has been initialized and get data it needs.
-    private var implementation: CustomerIOInstance?
+    private var implementation: CustomerIOInstance!
 
     // The 1 place that DiGraph is strongly stored in memory for the SDK.
     // Exposed for `SdkInitializedUtil`. Not recommended to use this property directly.
-    internal var diGraph: DIGraph?
+    public var diGraph: DIGraph! // TODO: better place to store the digraph?
 
     // strong reference to repository to prevent garbage collection as it runs tasks in async.
     private var cleanupRepository: CleanupRepository?
@@ -159,11 +156,17 @@ public class CustomerIO: CustomerIOInstance {
         region: Region,
         configure configureHandler: ((inout SdkConfig) -> Void)?
     ) {
-        var newSdkConfig = SdkConfig.Factory.create(siteId: siteId, apiKey: apiKey, region: region)
+        var newSdkConfig = SdkConfig.Factory.create()
 
         if let configureHandler = configureHandler {
             configureHandler(&newSdkConfig)
         }
+
+        // TODO: improve this API
+        newSdkConfig.siteId = siteId
+        newSdkConfig.apiKey = apiKey
+        newSdkConfig.region = region
+        newSdkConfig.trackingApiUrl = region.productionTrackingUrl
 
         Self.initialize(config: newSdkConfig)
 
@@ -220,13 +223,6 @@ public class CustomerIO: CustomerIOInstance {
         // Register Tracking module hooks now that the module is being initialized.
         hooks.add(key: .tracking, provider: TrackingModuleHookProvider())
 
-        // Register the device token during SDK initialization to address device registration issues
-        // arising from lifecycle differences between wrapper SDKs and native SDK.
-        let globalDataStore = diGraph.globalDataStore
-        if let token = globalDataStore.pushDeviceToken {
-            registerDeviceToken(token)
-        }
-
         // run cleanup in background to prevent locking the UI thread
         threadUtil.runBackground { [weak self] in
             self?.cleanupRepository?.cleanup()
@@ -239,7 +235,7 @@ public class CustomerIO: CustomerIOInstance {
     }
 
     public var config: SdkConfig? {
-        implementation?.config
+        implementation.config
     }
 
     /**
@@ -249,10 +245,10 @@ public class CustomerIO: CustomerIOInstance {
      */
     public var profileAttributes: [String: Any] {
         get {
-            implementation?.profileAttributes ?? [:]
+            implementation.profileAttributes
         }
         set {
-            implementation?.profileAttributes = newValue
+            implementation.profileAttributes = newValue
         }
     }
 
@@ -267,10 +263,10 @@ public class CustomerIO: CustomerIOInstance {
      */
     public var deviceAttributes: [String: Any] {
         get {
-            implementation?.deviceAttributes ?? [:]
+            implementation.deviceAttributes
         }
         set {
-            implementation?.deviceAttributes = newValue
+            implementation.deviceAttributes = newValue
         }
     }
 
@@ -292,11 +288,11 @@ public class CustomerIO: CustomerIOInstance {
         identifier: String,
         body: RequestBody
     ) {
-        implementation?.identify(identifier: identifier, body: body)
+        implementation.identify(identifier: identifier, body: body)
     }
 
     public func identify(identifier: String, body: [String: Any]) {
-        implementation?.identify(identifier: identifier, body: body)
+        implementation.identify(identifier: identifier, body: body)
     }
 
     /**
@@ -309,7 +305,7 @@ public class CustomerIO: CustomerIOInstance {
      If no profile has been identified yet, this function will ignore your request.
      */
     public func clearIdentify() {
-        implementation?.clearIdentify()
+        implementation.clearIdentify()
     }
 
     /**
@@ -325,15 +321,15 @@ public class CustomerIO: CustomerIOInstance {
         name: String,
         data: RequestBody?
     ) {
-        implementation?.track(name: name, data: data)
+        implementation.track(name: name, data: data)
     }
 
     public func track(name: String, data: [String: Any]) {
-        implementation?.track(name: name, data: data)
+        implementation.track(name: name, data: data)
     }
 
     public func screen(name: String, data: [String: Any]) {
-        implementation?.screen(name: name, data: data)
+        implementation.screen(name: name, data: data)
     }
 
     /**
@@ -349,7 +345,7 @@ public class CustomerIO: CustomerIOInstance {
         name: String,
         data: RequestBody
     ) {
-        implementation?.screen(name: name, data: data)
+        implementation.screen(name: name, data: data)
     }
 
     internal func automaticScreenView(
@@ -368,7 +364,7 @@ public class CustomerIO: CustomerIOInstance {
         name: String,
         data: RequestBody
     ) {
-        implementation?.screen(name: name, data: data)
+        implementation.screen(name: name, data: data)
     }
 
     /**
@@ -376,14 +372,14 @@ public class CustomerIO: CustomerIOInstance {
      is no active customer, this will fail to register the device
      */
     public func registerDeviceToken(_ deviceToken: String) {
-        implementation?.registerDeviceToken(deviceToken)
+        implementation.registerDeviceToken(deviceToken)
     }
 
     /**
      Delete the currently registered device token
      */
     public func deleteDeviceToken() {
-        implementation?.deleteDeviceToken()
+        implementation.deleteDeviceToken()
     }
 
     /**
@@ -394,6 +390,6 @@ public class CustomerIO: CustomerIOInstance {
         event: Metric,
         deviceToken: String
     ) {
-        implementation?.trackMetric(deliveryID: deliveryID, event: event, deviceToken: deviceToken)
+        implementation.trackMetric(deliveryID: deliveryID, event: event, deviceToken: deviceToken)
     }
 }

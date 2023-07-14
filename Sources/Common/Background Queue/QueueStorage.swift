@@ -39,7 +39,6 @@ public protocol QueueStorage: AutoMockable {
 public class FileManagerQueueStorage: QueueStorage {
     private let fileStorage: FileStorage
     private let jsonAdapter: JsonAdapter
-    private let siteId: String
     private let sdkConfig: SdkConfig
     private let logger: Logger
     private let dateUtil: DateUtil
@@ -54,7 +53,6 @@ public class FileManagerQueueStorage: QueueStorage {
         logger: Logger,
         dateUtil: DateUtil
     ) {
-        self.siteId = sdkConfig.siteId
         self.fileStorage = fileStorage
         self.jsonAdapter = jsonAdapter
         self.sdkConfig = sdkConfig
@@ -95,7 +93,7 @@ public class FileManagerQueueStorage: QueueStorage {
         defer { lock.unlock() }
 
         var existingInventory = getInventory()
-        let beforeCreateQueueStatus = QueueStatus(queueId: siteId, numTasksInQueue: existingInventory.count)
+        let beforeCreateQueueStatus = QueueStatus(numTasksInQueue: existingInventory.count)
 
         let newTaskStorageId = UUID().uuidString
         let newQueueTask = QueueTask(
@@ -119,7 +117,7 @@ public class FileManagerQueueStorage: QueueStorage {
         existingInventory.append(newQueueItem)
 
         let updatedInventoryCount = existingInventory.count
-        let afterCreateQueueStatus = QueueStatus(queueId: siteId, numTasksInQueue: updatedInventoryCount)
+        let afterCreateQueueStatus = QueueStatus(numTasksInQueue: updatedInventoryCount)
 
         if !saveInventory(existingInventory) {
             return CreateQueueStorageTaskResult(success: false, queueStatus: beforeCreateQueueStatus, createdTask: nil)

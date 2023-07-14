@@ -67,7 +67,11 @@ open class UnitTest: XCTestCase {
     }
 
     public func setUp(siteId: String? = nil, enableLogs: Bool = false, modifySdkConfig: ((inout SdkConfig) -> Void)? = nil) {
-        var newSdkConfig = SdkConfig.Factory.create(siteId: siteId ?? testSiteId, apiKey: "", region: Region.US)
+        var newSdkConfig = SdkConfig.Factory.create()
+        newSdkConfig.siteId = siteId ?? testSiteId
+        newSdkConfig.apiKey = ""
+        newSdkConfig.region = .US
+
         if enableLogs {
             newSdkConfig.logLevel = CioLogLevel.debug
         }

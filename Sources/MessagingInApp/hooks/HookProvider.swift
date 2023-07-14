@@ -4,16 +4,12 @@ import Foundation
 
 // sourcery: InjectRegister = "ModuleHookProvider"
 class MessagingInAppModuleHookProvider: ModuleHookProvider {
-    private let sdkInitializedUtil = SdkInitializedUtilImpl()
-
-    private var diGraph: DIGraph? {
-        sdkInitializedUtil.postInitializedData?.diGraph
+    private var diGraph: DIGraph {
+        CustomerIO.shared.diGraph
     }
 
     var profileIdentifyHook: ProfileIdentifyHook? {
-        guard let diGraph = diGraph else { return nil }
-
-        return MessagingInAppImplementation(diGraph: diGraph)
+        MessagingInAppImplementation(diGraph: diGraph)
     }
 
     var queueRunnerHook: QueueRunnerHook? {
@@ -21,8 +17,6 @@ class MessagingInAppModuleHookProvider: ModuleHookProvider {
     }
 
     var screenTrackingHook: ScreenTrackingHook? {
-        guard let diGraph = diGraph else { return nil }
-
-        return MessagingInAppImplementation(diGraph: diGraph)
+        MessagingInAppImplementation(diGraph: diGraph)
     }
 }

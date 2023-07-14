@@ -16,17 +16,38 @@ public protocol HttpClient: AutoMockable {
 
 // sourcery: InjectRegister = "HttpClient"
 public class CIOHttpClient: HttpClient {
-    private let baseUrls: HttpBaseUrls
+    private let sdkConfig: SdkConfig
     private var httpRequestRunner: HttpRequestRunner
     private let jsonAdapter: JsonAdapter
     private var globalDataStore: GlobalDataStore
     private let logger: Logger
     private let retryPolicyTimer: SimpleTimer
     private let retryPolicy: HttpRetryPolicy
-    private let cioApiSession: URLSession // only used to call the CIO API.
+    private let userAgentUtil: UserAgentUtil
+
+    // Construct the URLSessions objects once and re-use them for all HTTP requests in the
+    // lifecycle of this object.
+
+    private var _cioApiSession: URLSession?
+    private var cioApiSession: URLSession? { // only used to call the CIO API.
+        if _cioApiSession == nil {
+            _cioApiSession = getCIOApiSession()
+        }
+
+        return _cioApiSession
+    }
+
     private let publicSession: URLSession // session used to call servers accessible to the public (such as CDNs)
     private var allSessions: [URLSession] {
-        [cioApiSession, publicSession]
+        var sessions = [publicSession]
+        if let cioApiSession = cioApiSession {
+            sessions.append(cioApiSession)
+        }
+        return sessions
+    }
+
+    private var baseUrls: HttpBaseUrls? {
+        sdkConfig.httpBaseUrls
     }
 
     init(
@@ -39,21 +60,14 @@ public class CIOHttpClient: HttpClient {
         retryPolicy: HttpRetryPolicy,
         userAgentUtil: UserAgentUtil
     ) {
+        self.sdkConfig = sdkConfig
         self.httpRequestRunner = httpRequestRunner
-        self.baseUrls = sdkConfig.httpBaseUrls
         self.jsonAdapter = jsonAdapter
         self.globalDataStore = globalDataStore
         self.logger = logger
         self.retryPolicyTimer = timer
         self.retryPolicy = retryPolicy
-
-        // Construct the URLSessions when the object is initialized and re-use them for all HTTP requests in the
-        // lifecycle of this object.
-        self.cioApiSession = Self.getCIOApiSession(
-            siteId: sdkConfig.siteId,
-            apiKey: sdkConfig.apiKey,
-            userAgentHeaderValue: userAgentUtil.getUserAgentHeaderValue()
-        )
+        self.userAgentUtil = userAgentUtil
         self.publicSession = Self.getBasicSession()
     }
 
@@ -65,12 +79,16 @@ public class CIOHttpClient: HttpClient {
         httpRequestRunner.downloadFile(
             url: url,
             fileType: fileType,
-            session: getSessionForRequest(url: url),
+            session: getSessionForRequest(url: url)!,
             onComplete: onComplete
         )
     }
 
     public func request(_ params: HttpRequestParams, onComplete: @escaping (Result<Data, HttpRequestError>) -> Void) {
+        guard let session = getSessionForRequest(url: params.url) else {
+            return onComplete(.failure(.sdkNotInitialized))
+        }
+
         if let httpPauseEnds = globalDataStore.httpRequestsPauseEnds, !httpPauseEnds.hasPassed {
             logger.debug("HTTP request ignored because requests are still paused.")
             return onComplete(.failure(.noRequestMade(nil)))
@@ -79,7 +97,7 @@ public class CIOHttpClient: HttpClient {
         httpRequestRunner
             .request(
                 params: params,
-                session: getSessionForRequest(url: params.url)
+                session: session
             ) { [weak self] data, response, error in
                 guard let self = self else { return }
 
@@ -167,17 +185,17 @@ extension CIOHttpClient {
         return URLSession(configuration: urlSessionConfig, delegate: nil, delegateQueue: nil)
     }
 
-    static func getCIOApiSession(
-        siteId: String,
-        apiKey: String,
-        userAgentHeaderValue: String
-    ) -> URLSession {
-        let urlSessionConfig = getBasicSession().configuration
-        let basicAuthHeaderString = "Basic \(getBasicAuthHeaderString(siteId: siteId, apiKey: apiKey))"
+    func getCIOApiSession() -> URLSession? {
+        guard let siteId = sdkConfig.siteId, let apiKey = sdkConfig.apiKey else {
+            return nil
+        }
+
+        let urlSessionConfig = Self.getBasicSession().configuration
+        let basicAuthHeaderString = "Basic \(Self.getBasicAuthHeaderString(siteId: siteId, apiKey: apiKey))"
 
         urlSessionConfig.httpAdditionalHeaders = ["Content-Type": "application/json; charset=utf-8",
                                                   "Authorization": basicAuthHeaderString,
-                                                  "User-Agent": userAgentHeaderValue]
+                                                  "User-Agent": userAgentUtil.getUserAgentHeaderValue()]
 
         return URLSession(configuration: urlSessionConfig, delegate: nil, delegateQueue: nil)
     }
@@ -185,10 +203,13 @@ extension CIOHttpClient {
     // Each URLSession used in this object are designed to request specific servers. Mostly in the HTTP header values
     // being added.
     // Choose what URLSession at runtime by the hostname of the URL being contacted in the request.
-    func getSessionForRequest(url: URL) -> URLSession {
-        let cioApiHostname = URL(string: baseUrls.trackingApi)!.host
-        let requestHostname = url.host
-        let isRequestToCIOApi = cioApiHostname == requestHostname
+    func getSessionForRequest(url: URL) -> URLSession? {
+        // TODO: it might be a better idea to create 2 HTTP client classes: 1 for public, 1 for CIO API calls.
+        // the queu runner function for each task type knows what http client it should be using. So, it could be the one to choose.
+
+//        let cioApiHostname = URL(string: baseUrls.trackingApi)!.host
+//        let requestHostname = url.host
+        let isRequestToCIOApi = url.absoluteString.contains("customer")
 
         return isRequestToCIOApi ? cioApiSession : publicSession
     }
