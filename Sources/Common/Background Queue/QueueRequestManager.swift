@@ -27,23 +27,23 @@ public protocol QueueRequestManager: AutoMockable {
 // sourcery: InjectSingleton
 public class CioQueueRequestManager: QueueRequestManager {
     @Atomic internal var isRunningRequest = false
-    @Atomic internal var callbacks: [() -> Void] = []
+//    @Atomic internal var callbacks: [() -> Void] = []
 
     public func requestComplete() {
-        let existingCallbacks = callbacks
+//        let existingCallbacks = callbacks
 
-        callbacks = []
+//        callbacks = []
         isRunningRequest = false
 
-        existingCallbacks.forEach { callback in
-            callback()
-        }
+//        existingCallbacks.forEach { callback in
+//            callback()
+//        }
     }
 
     public func startRequest(onComplete: @escaping () -> Void) -> Bool {
         let isQueueRunningARequest = isRunningRequest
 
-        callbacks.append(onComplete)
+//        callbacks.append(onComplete)
 
         if !isQueueRunningARequest {
             isRunningRequest = true
