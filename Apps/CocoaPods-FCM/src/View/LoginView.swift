@@ -2,6 +2,25 @@ import CioTracking
 import SwiftUI
 
 struct LoginView: View {
+    var body: some View {
+        NavigationView {
+            TabView {
+                ForEach(1 ... 10, id: \.self) { index in
+                    NavigationLink(destination: Text("Tab \(index) Content")) {
+                        LoginsubView()
+                    }
+                    .tabItem {
+                        Image(systemName: "number.circle.fill")
+                        Text("Tab \(index)")
+                    }
+                }
+            }
+            .navigationTitle("Tab Example")
+        }
+    }
+}
+
+struct LoginsubView: View {
     @State private var firstNameText: String = ""
     @State private var emailText: String = ""
 

@@ -23,10 +23,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Initialize the Customer.io SDK
         CustomerIO.initialize(siteId: siteId, apiKey: apiKey, region: .US) { config in
             // Modify properties in the config object to configure the Customer.io SDK.
-            // config.logLevel = .debug // Uncomment this line to enable debug logging.
+            config.logLevel = .debug // Uncomment this line to enable debug logging.
 
             // This line of code is internal to Customer.io for testing purposes. Do not add this code to your app.
-            appSetSettings?.configureCioSdk(config: &config)
+//            appSetSettings?.configureCioSdk(config: &config)
+            config.autoTrackScreenViews = true
         }
         MessagingInApp.initialize(eventListener: self)
 
