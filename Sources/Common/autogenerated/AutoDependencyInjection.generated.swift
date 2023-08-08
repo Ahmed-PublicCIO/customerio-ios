@@ -343,13 +343,27 @@ extension DIGraph {
         FileManagerFileStorage(sdkConfig: sdkConfig, logger: logger)
     }
 
-    // QueueStorage
+    // QueueStorage (singleton)
     public var queueStorage: QueueStorage {
         getOverriddenInstance() ??
-            newQueueStorage
+            sharedQueueStorage
     }
 
-    private var newQueueStorage: QueueStorage {
+    public var sharedQueueStorage: QueueStorage {
+        // Use a DispatchQueue to make singleton thread safe. You must create unique dispatchqueues instead of using 1 shared one or you will get a crash when trying
+        // to call DispatchQueue.sync{} while already inside another DispatchQueue.sync{} call.
+        DispatchQueue(label: "DIGraph_QueueStorage_singleton_access").sync {
+            if let overridenDep: QueueStorage = getOverriddenInstance() {
+                return overridenDep
+            }
+            let existingSingletonInstance = self.singletons[String(describing: QueueStorage.self)] as? QueueStorage
+            let instance = existingSingletonInstance ?? _get_queueStorage()
+            self.singletons[String(describing: QueueStorage.self)] = instance
+            return instance
+        }
+    }
+
+    private func _get_queueStorage() -> QueueStorage {
         FileManagerQueueStorage(fileStorage: fileStorage, jsonAdapter: jsonAdapter, lockManager: lockManager, sdkConfig: sdkConfig, logger: logger, dateUtil: dateUtil)
     }
 
