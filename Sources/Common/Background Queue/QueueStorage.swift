@@ -36,7 +36,6 @@ public protocol QueueStorage: AutoMockable {
 }
 
 // sourcery: InjectRegister = "QueueStorage"
-// sourcery: InjectSingleton
 public class FileManagerQueueStorage: QueueStorage {
     private let fileStorage: FileStorage
     private let jsonAdapter: JsonAdapter
@@ -44,10 +43,14 @@ public class FileManagerQueueStorage: QueueStorage {
     private let sdkConfig: SdkConfig
     private let logger: Logger
     private let dateUtil: DateUtil
+    private var inventoryStore: QueueInventoryMemoryStore
 
     private let lock: Lock
 
-    @Atomic private var inventory: [QueueTaskMetadata]?
+    private var inventory: [QueueTaskMetadata]? {
+        get { inventoryStore.inventory }
+        set { inventoryStore.inventory = newValue }
+    }
 
     init(
         fileStorage: FileStorage,
@@ -55,7 +58,8 @@ public class FileManagerQueueStorage: QueueStorage {
         lockManager: LockManager,
         sdkConfig: SdkConfig,
         logger: Logger,
-        dateUtil: DateUtil
+        dateUtil: DateUtil,
+        inventoryStore: QueueInventoryMemoryStore
     ) {
         self.siteId = sdkConfig.siteId
         self.fileStorage = fileStorage
@@ -64,6 +68,7 @@ public class FileManagerQueueStorage: QueueStorage {
         self.logger = logger
         self.dateUtil = dateUtil
         self.lock = lockManager.getLock(id: .queueStorage)
+        self.inventoryStore = inventoryStore
     }
 
     public func getInventory() -> [QueueTaskMetadata] {

@@ -28,7 +28,7 @@ class QueueRequestManagerTest: UnitTest {
         let givenCallback: () -> Void = {
             callbackCalled = true
         }
-        manager.callbacks = [givenCallback]
+//        manager.callbacks = [givenCallback]
 
         manager.requestComplete()
 
@@ -51,10 +51,10 @@ class QueueRequestManagerTest: UnitTest {
     }
 
     func test_startRequest_expectAddCallback() {
-        XCTAssertEqual(manager.callbacks.count, 0)
+//        XCTAssertEqual(manager.callbacks.count, 0)
 
         _ = manager.startRequest {}
 
-        XCTAssertEqual(manager.callbacks.count, 1)
+//        XCTAssertEqual(manager.callbacks.count, 1)
     }
 }

@@ -113,6 +113,9 @@ extension DIGraph {
         _ = lockManager
         countDependenciesResolved += 1
 
+        _ = queueInventoryMemoryStore
+        countDependenciesResolved += 1
+
         _ = dateUtil
         countDependenciesResolved += 1
 
@@ -343,28 +346,14 @@ extension DIGraph {
         FileManagerFileStorage(sdkConfig: sdkConfig, logger: logger)
     }
 
-    // QueueStorage (singleton)
+    // QueueStorage
     public var queueStorage: QueueStorage {
         getOverriddenInstance() ??
-            sharedQueueStorage
+            newQueueStorage
     }
 
-    public var sharedQueueStorage: QueueStorage {
-        // Use a DispatchQueue to make singleton thread safe. You must create unique dispatchqueues instead of using 1 shared one or you will get a crash when trying
-        // to call DispatchQueue.sync{} while already inside another DispatchQueue.sync{} call.
-        DispatchQueue(label: "DIGraph_QueueStorage_singleton_access").sync {
-            if let overridenDep: QueueStorage = getOverriddenInstance() {
-                return overridenDep
-            }
-            let existingSingletonInstance = self.singletons[String(describing: QueueStorage.self)] as? QueueStorage
-            let instance = existingSingletonInstance ?? _get_queueStorage()
-            self.singletons[String(describing: QueueStorage.self)] = instance
-            return instance
-        }
-    }
-
-    private func _get_queueStorage() -> QueueStorage {
-        FileManagerQueueStorage(fileStorage: fileStorage, jsonAdapter: jsonAdapter, lockManager: lockManager, sdkConfig: sdkConfig, logger: logger, dateUtil: dateUtil)
+    private var newQueueStorage: QueueStorage {
+        FileManagerQueueStorage(fileStorage: fileStorage, jsonAdapter: jsonAdapter, lockManager: lockManager, sdkConfig: sdkConfig, logger: logger, dateUtil: dateUtil, inventoryStore: queueInventoryMemoryStore)
     }
 
     // JsonAdapter
@@ -399,6 +388,30 @@ extension DIGraph {
 
     private func _get_lockManager() -> LockManager {
         LockManager()
+    }
+
+    // QueueInventoryMemoryStore (singleton)
+    internal var queueInventoryMemoryStore: QueueInventoryMemoryStore {
+        getOverriddenInstance() ??
+            sharedQueueInventoryMemoryStore
+    }
+
+    internal var sharedQueueInventoryMemoryStore: QueueInventoryMemoryStore {
+        // Use a DispatchQueue to make singleton thread safe. You must create unique dispatchqueues instead of using 1 shared one or you will get a crash when trying
+        // to call DispatchQueue.sync{} while already inside another DispatchQueue.sync{} call.
+        DispatchQueue(label: "DIGraph_QueueInventoryMemoryStore_singleton_access").sync {
+            if let overridenDep: QueueInventoryMemoryStore = getOverriddenInstance() {
+                return overridenDep
+            }
+            let existingSingletonInstance = self.singletons[String(describing: QueueInventoryMemoryStore.self)] as? QueueInventoryMemoryStore
+            let instance = existingSingletonInstance ?? _get_queueInventoryMemoryStore()
+            self.singletons[String(describing: QueueInventoryMemoryStore.self)] = instance
+            return instance
+        }
+    }
+
+    private func _get_queueInventoryMemoryStore() -> QueueInventoryMemoryStore {
+        QueueInventoryMemoryStoreImpl()
     }
 
     // DateUtil
