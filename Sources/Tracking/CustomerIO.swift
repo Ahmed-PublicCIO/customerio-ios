@@ -1,5 +1,8 @@
 import CioInternalCommon
 import Foundation
+#if canImport(SwiftUI)
+import SwiftUI
+#endif
 
 public protocol CustomerIOInstance: AutoMockable {
     var siteId: String? { get }
@@ -167,11 +170,22 @@ public class CustomerIO: CustomerIOInstance {
 
         Self.initialize(config: newSdkConfig)
 
-        if newSdkConfig.autoTrackScreenViews {
+        var isSwiftUIApp = false
+
+        #if canImport(SwiftUI)
+        isSwiftUIApp = UIApplication.shared.delegate?.description.contains("SwiftUI.AppDelegate") ?? false
+        #endif
+
+        if newSdkConfig.autoTrackScreenViews, !isSwiftUIApp {
             // Setting up screen view tracking is not available for rich push (Notification Service Extension).
             // Only call this code when not possibly being called from a NSE.
             Self.shared.setupAutoScreenviewTracking()
         }
+    }
+
+    private static func appNotSwiftUIApp() -> Bool {
+        true
+//        UIApplication.delegate != nil && ((UIApplication.delegate as? SwiftUIApp) == nil)
     }
 
     /**
