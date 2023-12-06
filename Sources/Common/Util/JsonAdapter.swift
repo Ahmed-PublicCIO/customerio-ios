@@ -76,10 +76,14 @@ public class JsonAdapter {
             return nil
         }
 
+        return toDictionary(data)
+    }
+
+    public func toDictionary(_ data: Data) -> [AnyHashable: Any]? {
         do {
             return try JSONSerialization.jsonObject(with: data, options: []) as? [AnyHashable: Any]
         } catch {
-            log.error("\(error.localizedDescription), object: \(obj)")
+            log.error("\(error.localizedDescription), data: \(data)")
         }
 
         return nil
