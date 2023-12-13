@@ -1,16 +1,15 @@
-import Combine
 import Foundation
 
 /// Defines the contract for an event bus system.
 ///
 /// Specifies methods for sending events and registering for event notifications.
 /// Supports type-safe event handling and scheduler-based execution.
-public protocol EventBus: AnyObject {
+public protocol EventBus: AutoMockable {
     /// Sends an event.
     ///
     /// - Parameters:
     ///     - event: An instance of the event that conforms to the `EventRepresentable` protocol.
-    @discardableResult func send<E: EventRepresentable>(_ event: E) -> Bool
+    func send<E: EventRepresentable>(_ event: E)
 
     /// Triggers action when EventBus emits an event.
     ///
@@ -18,7 +17,7 @@ public protocol EventBus: AnyObject {
     ///     - eventType: Type of an event that triggers the action.
     ///     - action: The action to perform when an event is emitted by EventBus. The  event instance is passed as a parameter to action.
     /// - Returns: A cancellable instance, which needs to be stored as long as action needs to be triggered. Deallocation of the result will unsubscribe from the event and action will not be triggered.
-    @discardableResult func onReceive<E: EventRepresentable>(_ eventType: E.Type, perform action: @escaping (E) -> Void) -> AnyCancellable
+    func addListener<E: EventRepresentable>(_ listener: Any, toEvents eventType: E.Type, onEventCall selector: Selector)
 
     /// Triggers action on specific scheduler when EventBus emits an event.
     ///
@@ -27,112 +26,80 @@ public protocol EventBus: AnyObject {
     ///     - scheduler: The scheduler that is used to perform action.
     ///     - action: The action to perform when an event is emitted by EventBus. The  event instance is passed as a parameter to action.
     /// - Returns: A cancellable instance, which needs to be stored as long as action needs to be triggered. Deallocation of the result will unsubscribe from the event and action will not be triggered.
-    @discardableResult func onReceive<E: EventRepresentable, S: Scheduler>(_ eventType: E.Type, performOn scheduler: S, action: @escaping (E) -> Void) -> AnyCancellable
+    func stopListening(_ listener: Any)
+
+    func parse<E: EventRepresentable>(_ notification: Notification) -> E?
 }
 
-/// `SharedEventBus` is a centralized component that manages event distribution in an application.
-/// It allows for the sending of events and the registration of listeners to handle specific event types.
-///
-/// The EventBus follows a publish-subscribe pattern, enabling loose coupling between event producers and consumers.
-///
-/// Usage:
-/// - To send an event: `eventBus.send(myEvent)`
-/// - To listen for an event: `eventBus.onReceive(MyEventType.self) { event in /* handle event */ }`
-///
-/// Important:
-/// - `SharedEventBus` emits `NewSubscriptionEvent` when a new listener subscribes to a specific event type.
-///   This allows other parts of the system to react to changes in event listeners.
-/// - Be cautious when subscribing to `NewSubscriptionEvent` within its own handler.
-///   Creating a new subscription to `NewSubscriptionEvent` in its handler can lead to unintended recursion
-///   and should be avoided to prevent potential infinite loops.
-///
-/// Thread Safety:
-/// - `SharedEventBus` is designed to be thread-safe. It ensures that events are sent and listeners are registered
-///   in a thread-safe manner.
-///
-/// Example:
-/// ```
-/// let eventBus = SharedEventBus(listenersRegistry: ...)
-/// eventBus.onReceive(ProfileIdentifiedEvent.self) { event in
-///     print("Received ProfileIdentifiedEvent with identifier: \(event.identifier)")
-/// }
-/// eventBus.send(ProfileIdentifiedEvent(identifier: "user123"))
-/// ```
+/**
+ A wrapper around notificationcenter to act as our SDK's eventbus.
 
+ Keep file small in size because this file is tested during QA, not automated tests.
+
+ This class's job:
+ 1. Allows us to use EventRepresentable data types for eventbus events.
+ 2. Mock Notificationcenter in our tests.
+ */
 // sourcery: InjectRegisterShared = "EventBus"
-// sourcery: InjectSingleton
-class SharedEventBus: EventBus {
-    private var listenersRegistry: EventListenersRegistry
+class NotificationCenterEventBus: EventBus {
+    public func send<E: EventRepresentable>(_ event: E) {
+        let nameOfEvent = String(describing: type(of: event)) // name of the class
 
-    /// Initializes a new instance of `SharedEventBus`.
-    ///
-    /// - Parameter listenersRegistry: The registry used to manage listeners for different event types.
-    public init(listenersRegistry: EventListenersRegistry) {
-        self.listenersRegistry = listenersRegistry
+        let eventData: [AnyHashable: Any] = [
+            "data": event.params
+        ]
+
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: nameOfEvent), object: nil, userInfo: eventData)
     }
 
-    /// Sends an event to the corresponding listeners.
-    ///
-    /// - Parameter event: The event to be sent. Must conform to `EventRepresentable`.
-    @discardableResult public func send<E>(_ event: E) -> Bool where E: EventRepresentable {
-        guard let listener = listenersRegistry.getListener(forEventType: E.self) else {
-            return false
-        }
-        listener.send(event)
-        return true
+    func addListener<E>(_ listener: Any, toEvents eventType: E.Type, onEventCall selector: Selector) where E: EventRepresentable {
+        let nameOfEvent = String(describing: eventType) // name of the class
+
+        NotificationCenter.default.addObserver(listener, selector: selector, name: NSNotification.Name(rawValue: nameOfEvent), object: nil)
     }
 
-    /// Registers a listener for a specific event type and performs the provided action when that event is emitted.
-    ///
-    /// - Parameters:
-    ///   - eventType: The type of event to listen for.
-    ///   - action: The action to perform when an event of the specified type is emitted.
-    /// - Returns: A cancellable instance used to unsubscribe from the event.
-    @discardableResult
-    public func onReceive<E: EventRepresentable>(_ eventType: E.Type, perform action: @escaping (E) -> Void) -> AnyCancellable {
-        subscribeAndNotify(eventType: eventType, action: action)
+    func stopListening(_ listener: Any) {
+        NotificationCenter.default.removeObserver(listener)
     }
 
-    /// Registers a listener for a specific event type on a specified scheduler and performs the provided action when that event is emitted.
-    ///
-    /// - Parameters:
-    ///   - eventType: The type of event to listen for.
-    ///   - scheduler: The scheduler on which to perform the action.
-    ///   - action: The action to perform when an event of the specified type is emitted.
-    /// - Returns: A cancellable instance used to unsubscribe from the event.
-    @discardableResult
-    public func onReceive<E: EventRepresentable, S: Scheduler>(_ eventType: E.Type, performOn scheduler: S, action: @escaping (E) -> Void) -> AnyCancellable {
-        subscribeAndNotify(eventType: eventType, scheduler: scheduler, action: action)
-    }
-
-    /// A helper method to manage the subscription and notify about new subscriptions.
-    ///
-    /// - Parameters:
-    ///   - eventType: The type of event to listen for.
-    ///   - scheduler: An optional scheduler on which to perform the action.
-    ///   - action: The action to perform when an event of the specified type is emitted.
-    /// - Returns: A cancellable instance used to unsubscribe from the event.
-    private func subscribeAndNotify<E: EventRepresentable>(
-        eventType: E.Type,
-        scheduler: (any Scheduler)? = nil, // Optional scheduler
-        action: @escaping (E) -> Void
-    ) -> AnyCancellable {
-        let isNewListener = !listenersRegistry.hasListener(forEventType: E.self)
-        let listener = listenersRegistry.getOrCreateListener(forEventType: E.self)
-
-        let subscription: AnyCancellable
-        if let scheduler = scheduler {
-            subscription = listener.registerSubscription(scheduler: scheduler, action: action)
-        } else {
-            subscription = listener.registerSubscription(action: action)
+    func parse<E>(_ notification: Notification) -> E? where E: EventRepresentable {
+        guard let userInfo = notification.userInfo else {
+            return nil
         }
 
-        // Prevent emitting NewSubscriptionEvent for its own subscriptions
-        if isNewListener, eventType != NewSubscriptionEvent.self {
-            // Notify about the new subscription
-            send(NewSubscriptionEvent(subscribedEventType: E.self))
+        guard let data = userInfo["data"] as? E else {
+            logger.error("this should not happen. log an error to SDK here as it probably indicates a bug in the SDK code")
+            return nil
         }
 
-        return subscription
+        return data
+    }
+}
+
+// Example usage of eventbus:
+class Foo {
+    private let eventBus: EventBus
+
+    init(eventBus: EventBus) {
+        self.eventBus = eventBus
+
+        self.eventBus.addListener(self, toEvents: ProfileIdentifiedEvent.self, onEventCall: #selector(onProfileIdentified))
+    }
+
+    deinit { // swift function called when an object gets removed from memory
+        // remove eventbus listener.
+        // important to not forget to do this. maybe we can write a linter rule to remind us to add this in files that use eventbus?
+        self.eventBus.stopListening(self)
+    }
+
+    // Function that gets called by notificationcenter when eventbus sends an event
+    @objc func onProfileIdentified(_ notification: Notification) {
+        // Convert the NotificationCenter [AnyHashable: Any] data type and convert into the Event data type we need.
+        guard let event: ProfileIdentifiedEvent = eventBus.parse(notification) else {
+            return
+        }
+
+        // Do something with event
+        event.identifier
     }
 }
